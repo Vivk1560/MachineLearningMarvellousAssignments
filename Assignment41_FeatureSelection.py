@@ -2,6 +2,7 @@ import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score,confusion_matrix,ConfusionMatrixDisplay
+import matplotlib.pyplot as plt
 
 def main():
     df = pd.read_csv("WinePredictor.csv")
@@ -85,6 +86,16 @@ def main():
     y_pred = model_top10.predict(X_test)
     accuracy_top10 = accuracy_score(y_test,y_pred)
     print(f"Accuracy of model using only 10 features is:{accuracy_top10*100:.2f}%")
+    cm = confusion_matrix(y_test, y_pred)
+    print("Confusion Matrix:")
+    print(cm)
+    disp = ConfusionMatrixDisplay(
+        confusion_matrix=cm,
+        display_labels=[1,2,3]
+    )
+    disp.plot()
+    plt.title("Confusion Matrix - Final Random Forest Model")
+    plt.show()
 
 if __name__ == "__main__":
     main()
