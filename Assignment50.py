@@ -1,53 +1,59 @@
 #==========================================================================================================================
-# Assignment : Linear Regression
+# Assignment : Breast Cancer Prediction
 #
 # Objective:
-# To implement a Linear Regression model to predict Sales based on advertising expenditure
-# on TV, Radio and Newspaper using the Advertising dataset.
+# To implement a Logistic Regression model to predict whether a breast tumor
+# is Malignant or Benign using the Breast Cancer Wisconsin dataset.
 #
 # Dataset:
-# Advertising.csv
+# Breast Cancer Wisconsin Dataset (loaded using load_breast_cancer from sklearn)
 #
 # Features (Independent Variables):
-# 1. TV          - Advertising expenditure on TV
-# 2. radio       - Advertising expenditure on Radio
-# 3. newspaper   - Advertising expenditure on Newspaper
+# 30 real-valued features representing various measurements of breast cancer tumors.
 #
 # Target (Dependent Variable):
-# sales          - Sales generated from the advertising expenditure
+# 0 - Malignant
+# 1 - Benign
 #
 # Data Processing:
 # - Load and inspect the dataset
-# - Remove the unnecessary index column
 # - Check for missing values and duplicate records
 # - Analyze the correlation between the variables
+# - Visualize feature correlations using a heatmap
 # - Separate independent and dependent features
 # - Split the data into training and testing sets
 # - Standardize the independent features using StandardScaler
 #
 # Machine Learning Algorithm:
-# Linear Regression
+# Logistic Regression
 #
 # Model Evaluation:
-# - Mean Absolute Error (MAE)
-# - Mean Squared Error (MSE)
-# - R2 Score
-# - Actual vs Predicted Sales visualization using a scatter plot
+# - Accuracy
+# - Confusion Matrix
+# - Precision
+# - Recall
+# - F1-Score
+# - Display Logistic Regression coefficients
 #
 #==========================================================================================================================
 
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
-from sklearn.model_selection import train_test_split
+from sklearn.datasets import load_breast_cancer
+from sklearn.metrics import accuracy_score,classification_report,confusion_matrix,ConfusionMatrixDisplay
+from sklearn.linear_model import LogisticRegression
 import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+
 
 #--------------------------------------------------------------------------------------------------------------------------
 # Step 1 : Load Data
 #--------------------------------------------------------------------------------------------------------------------------
 
-df = pd.read_csv("Advertising.csv")
+data = load_breast_cancer()
+df = pd.DataFrame(data.data, columns=data.feature_names)
+df["Target"] = data.target
 print("Initial Entries From The Dataset Are:")
 print(df.head())
 print()
@@ -67,9 +73,6 @@ print(df.columns)
 # Step 2 : Process Data
 #--------------------------------------------------------------------------------------------------------------------------
 
-df = df.drop(columns=["Unnamed: 0"],axis = 1)
-print()
-print("After removing column - Unnamed: 0")
 print(df.head())
 print()
 print("Checking for missing values....")
@@ -80,13 +83,20 @@ print(df.duplicated().sum())
 print()
 print("Correlation Matrix is:")
 print(df.corr())
+print()
+print("Displaying Feature Correlation Heatmap:")
+plt.figure(figsize=(12, 10))
+sns.heatmap(df.corr(), cmap="coolwarm")
+plt.title("Feature Correlation Heatmap")
+plt.tight_layout()
+plt.show()
 
 #--------------------------------------------------------------------------------------------------------------------------
 # Step 3 : Separate Dependent And Independent Features
 #--------------------------------------------------------------------------------------------------------------------------
 
-X = df.drop(columns=["sales"])
-Y = df["sales"]
+X = df.drop(columns=["Target"])
+Y = df["Target"]
 print()
 print("Independent Features:")
 print(X.head())
@@ -112,7 +122,7 @@ X_test = scaler.transform(X_test)
 # Step 6 : Model Creation and Training
 #--------------------------------------------------------------------------------------------------------------------------
 
-model = LinearRegression()
+model = LogisticRegression()
 model = model.fit(X_train,Y_train)
 
 #--------------------------------------------------------------------------------------------------------------------------
@@ -120,9 +130,7 @@ model = model.fit(X_train,Y_train)
 #--------------------------------------------------------------------------------------------------------------------------
 
 Y_pred = model.predict(X_test)
-mse = mean_squared_error(Y_test,Y_pred)
-r2 = r2_score(Y_test,Y_pred)
-mae = mean_absolute_error(Y_test,Y_pred)
+accuracy = accuracy_score(Y_test,Y_pred)
 
 #--------------------------------------------------------------------------------------------------------------------------
 # Step 8 : Displaying Results
@@ -132,14 +140,14 @@ print()
 for i in range(len(Y_test)):
     print(
         f"Record {i + 1}: "
-        f"Predicted = {Y_pred[i]:.2f}, "
-        f"Expected = {Y_test.iloc[i]:.2f}"
+        f"Predicted = {Y_pred[i]}, "
+        f"Expected = {Y_test.iloc[i]}"
     )
 features = X.columns
 print()
 print("Coefficients of the model are:")
-for feature, coefficient in zip(features, model.coef_):
-    print(f"{feature}: {coefficient:.4f}")
+for feature, coefficient in zip(features, model.coef_[0]):
+    print(f"{feature}: {coefficient}")
 print()
 print("Intercept of the model is:")
 print(model.intercept_)
@@ -150,21 +158,32 @@ print(model.intercept_)
 
 print()
 print("Model Performance:")
-print("Mean Absolute Error :", mae)
-print("Mean Squared Error  :", mse)
-print("R2 Score            :", r2)
-
-#--------------------------------------------------------------------------------------------------------------------------
-# Step 10 : Plotting a scatter graph to see the difference
-#--------------------------------------------------------------------------------------------------------------------------
-
-plt.scatter(Y_test,Y_pred)
-plt.xlabel("Actual Sales")
-plt.ylabel("Predicted Sales")
-plt.title("Actual vs Predicted Sales")
-plt.plot(
-    [Y_test.min(),Y_test.max()],
-    [Y_test.min(),Y_test.max()],
-    linestyle = "--"
+print("Accuracy :",(accuracy*100))
+print()
+print("Classification Report:")
+print(classification_report(Y_test,Y_pred))
+print()
+print("Confusion Matrix :")
+print(confusion_matrix(Y_test,Y_pred))
+ConfusionMatrixDisplay.from_predictions(
+    Y_test,
+    Y_pred,
+    display_labels=data.target_names
 )
+plt.title("Confusion Matrix")
 plt.show()
+
+#--------------------------------------------------------------------------------------------------------------------------
+# Step 10 : Observations and Conclusion
+#--------------------------------------------------------------------------------------------------------------------------
+
+print()
+print("Observations and Conclusion:")
+print("The dataset contains 569 records and 30 independent features.")
+print("No missing values or duplicate records were found.")
+print("The features were standardized using StandardScaler.")
+print("Feature correlation analysis shows that several features are strongly correlated.")
+print(f"The Logistic Regression model achieved an accuracy of {accuracy * 100:.2f}%.")
+print("The classification report shows high precision, recall and F1-score for both classes.")
+print("The confusion matrix shows that the model correctly classified most of the test records.")
+print("Therefore, the trained Logistic Regression model performed well on the given test data.")
